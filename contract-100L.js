@@ -78,14 +78,15 @@ while (true) {
         const before_credits = await credits()
         await super_req(() => accept(contract.id))
         const after_credits = await credits()
-        console.log('credits:', before_credits, '->', after_credits)
-        console.log('accept reward:', contract.terms.payment.onAccepted, `x${(after_credits - before_credits) / contract.terms.payment.onAccepted}`)
+        console.log('accept reward:', contract.terms.payment.onAccepted, `x${(after_credits - before_credits) / contract.terms.payment.onAccepted}`,'\ncredits:', before_credits, '->', after_credits)
         Object.assign(contract, await fetch_contract(contract.id))
     } else {
         while (deliver().unitsRequired != deliver().unitsFulfilled) {
             await goto_waypoint(ships[0], deliver().destinationSymbol)
             const holding = ships[0].cargo.inventory.find(c => c.symbol == deliver().tradeSymbol)?.units ?? 0
-            const units = Math.min(deliver().unitsRequired - deliver().unitsFulfilled, ships[0].cargo.capacity - holding)
+            const market = (await axios.get(`/systems/${ships[0].nav.systemSymbol}/waypoints/${ships[0].nav.waypointSymbol}/market`)).data.data
+            const trade_volume = market.tradeGoods.find(g => g.symbol == deliver().tradeSymbol).tradeVolume
+            const units = Math.min(deliver().unitsRequired - deliver().unitsFulfilled, ships[0].cargo.capacity - holding, trade_volume)
             if (units > 0)
                 await buy_good(ships[0], deliver().tradeSymbol, units)
             await deliver_contract(contract, ships[0])
@@ -93,8 +94,7 @@ while (true) {
         const before_credits = await credits()
         await super_req(() => fulfill(contract.id))
         const after_credits = await credits()
-        console.log('credits:', before_credits, '->', after_credits)
-        console.log('fulfill reward:', contract.terms.payment.onFulfilled, `x${(after_credits - before_credits) / contract.terms.payment.onFulfilled}`)
+        console.log('fulfill reward:', contract.terms.payment.onFulfilled, `x${(after_credits - before_credits) / contract.terms.payment.onFulfilled}`,'\ncredits:', before_credits, '->', after_credits)
         Object.assign(contract, await fetch_contract(contract.id))
     }
 }
