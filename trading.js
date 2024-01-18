@@ -1,3 +1,5 @@
+/// WIP
+
 import axios from 'axios'
 import fs from 'fs'
 import dijkstra from 'dijkstrajs'
@@ -11,7 +13,7 @@ axios.interceptors.response.use(response => {
 // Config
 axios.defaults.baseURL = 'https://api.spacetraders.io/v2/'
 const FACTION = 'ASTRO'
-const CALLSIGN = '100L-3'
+const CALLSIGN = '100L-5'
 
 // Setup phase: data directory + agent registration
 const status = (await axios.get('/')).data
@@ -53,10 +55,10 @@ for(const a of market_waypoints) {
 async function goto_waypoint(ship, waypointSymbol) {
     const path = dijkstra.find_path(graph, ship.nav.waypointSymbol, waypointSymbol).slice(1)    
     for (const waypointSymbol of path) {
-        await navigate(ship, waypointSymbol)
-        await update_market(ship)
         await dock(ship)
-        await axios.post(`/my/ships/${ship.symbol}/refuel`, { units: ship.fuel.capacity - ship.fuel.current })
+        if (ship.fuel.capacity != ship.fuel.current)
+            await axios.post(`/my/ships/${ship.symbol}/refuel`, { units: ship.fuel.capacity - ship.fuel.current })
+        await navigate(ship, waypointSymbol)
     }
 }
 const dock = async ship => ship.nav.status !== 'DOCKED' && (ship.nav = (await axios.post(`/my/ships/${ship.symbol}/dock`)).data.data.nav)
@@ -85,15 +87,30 @@ while (true) {
         // get markets that haven't been visited within 3 hours
         const requires_update = market_waypoints.filter(w => w.market_remote.imports.length != 0 && (w.market_local?.timestamp ?? 0) < Date.now() - 3 * 60 * 60 * 1000)
             .sort((a, b) => (a.x - ships[0].nav.route.destination.x) ** 2 + (a.y - ships[0].nav.route.destination.y) ** 2 - (b.x - ships[0].nav.route.destination.x) ** 2 - (b.y - ships[0].nav.route.destination.y) ** 2)
-        if (requires_update.length > 0) {
+        if (false && requires_update.length > 0) {
             console.log('Updating', requires_update[0].symbol, 'at', requires_update[0].x, requires_update[0].y)
             await goto_waypoint(ships[0], requires_update[0].symbol)
             await update_market(ships[0])
         } else {
             // market_waypoints.filter(w => w.market_remote.imports.length != 0).map(
+
+            // Find the waypoint, waypoint, good tuple such that the following is maximised:
+            // = buy_quantity * (sell_price - buy_price) 
+            // quantity = min(capacity, buy_trade_volume * 2, sell_trade_volume * 2)
+            for (const a of market_waypoints) {
+                for (const b of market_waypoints) {
+                    for (const good of a.market_local?.tradeGoods ?? []) {
+
+                        console.log(good)
+                    }
+                }
+            }
             throw Error('@@ buy logic todo')
         }
     } else {
         throw Error('@@ sell logic todo')
+        // Find the waypoint, waypoint, good tuple such that the following is maximised:
+        // = sell_price
+        // !! actually.. load initial plan
     }
 }
