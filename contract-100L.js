@@ -67,9 +67,11 @@ async function goto_waypoint(ship, waypointSymbolTarget) {
 const super_req = async fn => sleep(30000).then(() => Promise.allSettled([...Array(30)].map(fn))).then(() => sleep(30000))
 
 const contract = ((await axios.get(`/my/contracts?limit=1&page=${(await axios.get('/my/contracts')).data.meta.total}`)).data.data)[0]
+const deliver = () => contract.terms.deliver[0]
+await sleep(new Date(ships[0].nav.route.arrival) - Date.now() + 1000)
 while (true) {
-    console.log(`deliver: ${contract.terms.deliver[0].tradeSymbol} ${contract.terms.deliver[0].unitsFulfilled}/${contract.terms.deliver[0].unitsRequired} to ${contract.terms.deliver[0].destinationSymbol}`)
-    console.log('fulfilled:', contract.fulfilled ? 'yes' : 'no', '\taccepted:', contract.accepted ? 'yes' : 'no')
+    console.log(`deliver: ${deliver().tradeSymbol} ${deliver().unitsFulfilled}/${deliver().unitsRequired} to ${deliver().destinationSymbol}`)
+    console.log(`fulfilled: ${contract.fulfilled ? 'yes' : 'no'}, accepted: ${contract.accepted ? 'yes' : 'no'}`)
     if (contract.fulfilled) {
         Object.assign(contract, await negotiate(ships[0]))
     } else if (!contract.accepted) {
@@ -80,20 +82,19 @@ while (true) {
         console.log('accept reward:', contract.terms.payment.onAccepted, `x${(after_credits - before_credits) / contract.terms.payment.onAccepted}`)
         Object.assign(contract, await fetch_contract(contract.id))
     } else {
-        while (contract.terms.deliver[0].unitsRequired != contract.terms.deliver[0].unitsFulfilled) {
-            const deliver = contract.terms.deliver[0]
-            await goto_waypoint(ships[0], deliver.destinationSymbol)
-            const holding = ships[0].cargo.inventory.find(c => c.symbol == deliver.tradeSymbol)?.units ?? 0
-            const units = Math.min(deliver.unitsRequired - deliver.unitsFulfilled, ships[0].cargo.capacity - holding)
+        while (deliver().unitsRequired != deliver().unitsFulfilled) {
+            await goto_waypoint(ships[0], deliver().destinationSymbol)
+            const holding = ships[0].cargo.inventory.find(c => c.symbol == deliver().tradeSymbol)?.units ?? 0
+            const units = Math.min(deliver().unitsRequired - deliver().unitsFulfilled, ships[0].cargo.capacity - holding)
             if (units > 0)
-                await buy_good(ships[0], deliver.tradeSymbol, units)
+                await buy_good(ships[0], deliver().tradeSymbol, units)
             await deliver_contract(contract, ships[0])
         }
         const before_credits = await credits()
         await super_req(() => fulfill(contract.id))
         const after_credits = await credits()
         console.log('credits:', before_credits, '->', after_credits)
-        console.log('fulfill reward:', contract.terms.payment.onFulfilled, `x${(after_credits - before_credits) / contract.terms.payment.onAccepted}`)
+        console.log('fulfill reward:', contract.terms.payment.onFulfilled, `x${(after_credits - before_credits) / contract.terms.payment.onFulfilled}`)
         Object.assign(contract, await fetch_contract(contract.id))
     }
 }
