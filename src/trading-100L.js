@@ -10,7 +10,7 @@ axios.interceptors.response.use(response => {
 })
 
 // Setup: data directory + agent registration
-const CALLSIGN = 'TEST-SDFSDF'
+const CALLSIGN = '100L-TRADING'
 const data_dir = `./data/${(await axios.get('/')).data.resetDate}/${CALLSIGN}`
 if (!fs.existsSync(data_dir)) fs.mkdirSync(data_dir, { recursive: true })
 if (!fs.existsSync(`${data_dir}/registration.json`)) {
