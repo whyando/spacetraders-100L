@@ -10,7 +10,7 @@ axios.interceptors.response.use(response => {
 })
 
 // Setup: data directory + agent registration
-const CALLSIGN = '100L-TRADING'
+const CALLSIGN = '100L-TRADER2'
 const data_dir = `./data/${(await axios.get('/')).data.resetDate}/${CALLSIGN}`
 if (!fs.existsSync(data_dir)) fs.mkdirSync(data_dir, { recursive: true })
 if (!fs.existsSync(`${data_dir}/registration.json`)) {
@@ -107,10 +107,12 @@ while (true) {
             fs.writeFileSync(`${data_dir}/trade.json`, JSON.stringify(trade, null, 2))
             await goto_waypoint(trade.src)
             await buy_good(trade.symbol, trade.units)
+            await update_market()
         }
     } else {
         const trade = JSON.parse(fs.readFileSync(`${data_dir}/trade.json`))
         await goto_waypoint(trade.dest)
         await sell_good(trade.symbol, trade.units) // todo: handle falling TV
+        await update_market()
     }
 }
