@@ -76,7 +76,7 @@ async function update_market() {
 await sleep(new Date(ship.nav.route.arrival) - Date.now() + 1000)
 while (true) {
     if (ship.cargo.units == 0) {
-        const requires_update = market_waypoints.filter(w => w.market_remote.imports.length != 0 && (w.market_local?.timestamp ?? 0) < Date.now() - 6 * 60 * 60 * 1000)
+        const requires_update = market_waypoints.filter(w => w.market_remote.imports.length != 0 && (w.market_local?.timestamp ?? 0) < Date.now() - 3 * 60 * 60 * 1000)
             .sort((a, b) => (a.x - ship.nav.route.destination.x) ** 2 + (a.y - ship.nav.route.destination.y) ** 2 - (b.x - ship.nav.route.destination.x) ** 2 - (b.y - ship.nav.route.destination.y) ** 2)
         if (requires_update.length > 0) {
             console.log('Updating', requires_update[0].symbol, 'at', requires_update[0].x, requires_update[0].y)
