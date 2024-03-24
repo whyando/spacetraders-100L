@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CMD="node src/trading-100L.js"
+CMD="node trader.js"
 
 until $CMD &>> run.log; do
     echo $(date +%Y-%m-%d_%H-%M-%S)
