@@ -11,7 +11,7 @@ axios.interceptors.response.use(response => {
 
 // Agent registration
 const resetDate = (await axios.get('/')).data.resetDate
-const CALLSIGN = resetDate.split('').reduce((a,c) => 7747357921*(a + c.charCodeAt(0))%5654646467,0).toString(36).slice(0,6).toUpperCase()
+const CALLSIGN = resetDate.split('').reduce((a,c) => 7747357921*(a + c.charCodeAt(0))%5654646467,0).toString(36).slice(0,4).toUpperCase()
 const data_dir = `./data/${resetDate}/${CALLSIGN}`
 if (!fs.existsSync(data_dir)) fs.mkdirSync(data_dir, { recursive: true })
 if (!fs.existsSync(`${data_dir}/registration.json`)) {
